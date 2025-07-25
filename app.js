@@ -3,7 +3,7 @@ import { PORT } from './config/env.js'
 import userRouter from "./routes/user.routes.js";
 import subscripcionRouter from "./routes/subscripcion.route.js";
 import authRouter from "./routes/auth.routes.js";
-
+import connectToDatabase from "./database/mongodb.js";
 
 const app = express();
 
@@ -21,8 +21,10 @@ app.get('/', (req,res)=>{
 
 });
 
-app.listen(PORT,()=>{
+app.listen(PORT,async ()=>{
     console.log(`subscription trnackink API corre en http://localhost:${PORT}`)
+
+    await connectToDatabase();
 });
 
 export default app;
