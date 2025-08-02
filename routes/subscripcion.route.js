@@ -1,24 +1,24 @@
 import { Router } from "express";
-import authorize from "../middlewares/auth.middleware";
-import { crearSubscripcion, getUserSubscripciones } from "../controllers/subscripcion.controller";
+import authorize from "../middlewares/auth.middleware.js";
+import { crearSubscripcion, getUserSubscripciones, getSubscripciones, getSubscripcionById, deleteSubscripcion, updateSubscripcion, cancelSubscripcion, getProximaRenovacion } from "../controllers/subscripcion.controller.js";
 
 const subscripcionRouter = Router();
 
-subscripcionRouter.get('/',(req,res)=> res.send({title: 'GET todas las subscripciones'}))
+subscripcionRouter.get('/', getSubscripciones )
 
-subscripcionRouter.get('/:id',(req,res)=> res.send({title: 'GET detalles de la subscripcion'}))
+subscripcionRouter.get('/:id',authorize, getSubscripcionById)
 
 subscripcionRouter.post('/',authorize, crearSubscripcion)
 
-subscripcionRouter.put('/:id',(req,res)=> res.send({title: 'UPDATE subscripciones'}))
+subscripcionRouter.put('/:id', authorize, updateSubscripcion)
 
-subscripcionRouter.delete('/:id',(req,res)=> res.send({title: 'DELETE subscripciones'}))
+subscripcionRouter.delete('/:id',authorize, deleteSubscripcion)
 
 subscripcionRouter.get('/user/:id', authorize, getUserSubscripciones)
 
-subscripcionRouter.put('/:id/cancel',(req,res)=> res.send({title: 'CANCEL subscripciones'}))
+subscripcionRouter.put('/:id/cancel', authorize, cancelSubscripcion)
 
-subscripcionRouter.get('/proxima renovacion',(req,res)=> res.send({title: 'GET proxima renovacion'}))
+subscripcionRouter.get('/:id/proxima-renovacion',authorize, getProximaRenovacion)
 
 export default subscripcionRouter;
 

@@ -50,7 +50,6 @@ const subscripcionSchema = new mongoose.Schema({
     },
     renovarFecha:{
         type: Date,
-        required: true,
         validate:{
             validator: function (value){ 
                 return value > this.fechaInicio
@@ -68,26 +67,47 @@ const subscripcionSchema = new mongoose.Schema({
 
 }, {timestamps: true});
 
-//calcula automaticamente la renovacion si se pierde
-subscripcionSchema.pre('save', function(next){
-    if(!this.renovarFecha){
-        const peridosRenovacion = {
-            daily: 1,
-            weekly: 7,
-            monthly: 30,
-            yearly: 365,
+// Hook para calcular automáticamente la renovación y actualizar el estado
+subscripcionSchema.pre('save', function(next) {
+    // Solo recalcula renovarFecha si es una suscripción nueva,
+    // o si la fechaInicio o la frecuencia han sido modificadas.
+    if (this.isNew || this.isModified('fechaInicio') || this.isModified('frecuencia')) {
+        if (this.fechaInicio && this.frecuencia) {
+            let nextRenewalDate = new Date(this.fechaInicio); // Crear una copia para no modificar fechaInicio
+
+            switch (this.frecuencia) {
+                case 'daily':
+                    nextRenewalDate.setDate(nextRenewalDate.getDate() + 1);
+                    break;
+                case 'weekly':
+                    nextRenewalDate.setDate(nextRenewalDate.getDate() + 7);
+                    break;
+                case 'monthly':
+                    // Para meses, es mejor usar setMonth para avanzar exactamente un mes
+                    nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+                    break;
+                case 'yearly':
+                    // Para años, es mejor usar setFullYear para avanzar exactamente un año
+                    nextRenewalDate.setFullYear(nextRenewalDate.getFullYear() + 1);
+                    break;
+                default:
+                    // Esto no debería ocurrir si 'frecuencia' tiene un enum bien definido
+                    break;
+            }
+            this.renovarFecha = nextRenewalDate;
         }
-        this.renovarFecha =new Date(this.fechaInicio);
-        this.renovarFecha.setDate(this.renovarFecha.getDate() + peridosRenovacion[this.frecuencia])
     }
 
-    //autorenovar el estado si la fecha de renovacion ha pasado
-    if(this.renovarFecha < new Date()){
-        this.estado = 'Expirada'
+    // Autorenovar el estado si la fecha de renovación ha pasado.
+    // Importante: Este hook solo se ejecuta en 'save'/'update'.
+    // Para actualizaciones en tiempo real, considera un cron job.
+    // Solo cambiamos a 'Expirada' si el estado actual es 'Activa'
+    if (this.renovarFecha && this.renovarFecha < new Date() && this.estado === 'Activa') {
+        this.estado = 'Expirada';
     }
 
     next();
-})
+});
 
 const Subscripcion = mongoose.model('Subscripcion', subscripcionSchema)
 
